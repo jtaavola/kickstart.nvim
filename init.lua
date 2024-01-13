@@ -106,14 +106,11 @@ require('lazy').setup({
       -- Adds LSP completion capabilities
       'hrsh7th/cmp-nvim-lsp',
       'hrsh7th/cmp-path',
-
-      -- Adds a number of user-friendly snippets
-      'rafamadriz/friendly-snippets',
     },
   },
 
   -- Useful plugin to show you pending keybinds.
-  { 'folke/which-key.nvim', opts = {} },
+  { 'folke/which-key.nvim',  opts = {} },
   {
     -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
@@ -253,6 +250,12 @@ require('lazy').setup({
     },
     build = ':TSUpdate',
   },
+  {
+    'nvimtools/none-ls.nvim',
+    dependencies = {
+      'nvim-lua/plenary.nvim'
+    }
+  },
 
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
@@ -325,6 +328,10 @@ vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous dia
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
+
+-- Easily move lines
+vim.keymap.set("v", "J", ":m '>+1<CR>gv=gv")
+vim.keymap.set("v", "K", ":m '<-2<CR>gv=gv")
 
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
@@ -567,8 +574,9 @@ local servers = {
   -- gopls = {},
   -- pyright = {},
   -- rust_analyzer = {},
-  -- tsserver = {},
+  tsserver = {},
   -- html = { filetypes = { 'html', 'twig', 'hbs'} },
+  pyright = {},
 
   lua_ls = {
     Lua = {
@@ -656,6 +664,64 @@ cmp.setup {
     { name = 'path' },
   },
 }
+
+local null_ls = require("null-ls")
+
+local function contains(arr, value)
+  for _, code in ipairs(arr) do
+    if code == value then
+      return true
+    end
+  end
+
+  return false
+end
+
+-- get python version - major.minor only (ex. 3.12)
+local function getPythonVersion()
+  local handle = io.popen("python --version")
+  if handle then
+    local version = handle:read("*a")
+    handle:close()
+
+    return string.match(version, "%d+%.%d+")
+  end
+  return ""
+end
+
+local function getPythonPathWithVenv()
+  local maybePythonPath = os.getenv("PYTHONPATH")
+  local maybeVenvPath = os.getenv("VIRTUAL_ENV")
+
+  local pythonPath = ""
+  if maybePythonPath then
+    pythonPath = maybePythonPath
+  end
+
+  local venvPath = ""
+  if maybeVenvPath then
+    venvPath = maybeVenvPath .. "/lib/python" .. getPythonVersion() .. "/site-packages"
+  end
+
+  return pythonPath .. ":" .. venvPath
+end
+
+null_ls.setup({
+  diagnostics_format = "[#{c}] #{m}",
+  sources = {
+    null_ls.builtins.diagnostics.pylint.with({
+      env = {
+        -- make pylint aware of venv
+        PYTHONPATH = getPythonPathWithVenv()
+      },
+      filter = function(diagnostic)
+        local excluded_codes = { 'no-value-for-parameter', 'unused-argument', 'undefined-variable' }
+        return not contains(excluded_codes, diagnostic.code)
+      end,
+    }),
+    null_ls.builtins.formatting.black,
+  },
+})
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et

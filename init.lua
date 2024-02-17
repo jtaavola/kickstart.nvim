@@ -430,7 +430,23 @@ vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = 
 vim.defer_fn(function()
   require('nvim-treesitter.configs').setup {
     -- Add languages to be installed here that you want installed for treesitter
-    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash' },
+    ensure_installed = {
+      'c',
+      'cpp',
+      'go',
+      'lua',
+      'python',
+      'rust',
+      'html',
+      'tsx',
+      'javascript',
+      'typescript',
+      'vimdoc',
+      'vim',
+      'bash',
+      'elixir',
+      'heex'
+    },
 
     -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
     auto_install = false,
@@ -572,12 +588,18 @@ require('mason-lspconfig').setup()
 local servers = {
   -- clangd = {},
   -- gopls = {},
-  -- pyright = {},
   -- rust_analyzer = {},
   tsserver = {},
-  -- html = { filetypes = { 'html', 'twig', 'hbs'} },
+  html = { filetypes = { 'html', 'heex' } },
   pyright = {},
-
+  elixirls = {},
+  tailwindcss = {
+    init_options = {
+      userLanguages = {
+        heex = "phoenix-heex",
+      }
+    }
+  },
   lua_ls = {
     Lua = {
       workspace = { checkThirdParty = false },
@@ -609,6 +631,7 @@ mason_lspconfig.setup_handlers {
       on_attach = on_attach,
       settings = servers[server_name],
       filetypes = (servers[server_name] or {}).filetypes,
+      init_options = (servers[server_name] or {}).init_options,
     }
   end,
 }
@@ -715,7 +738,15 @@ null_ls.setup({
         PYTHONPATH = getPythonPathWithVenv()
       },
       filter = function(diagnostic)
-        local excluded_codes = { 'no-value-for-parameter', 'unused-argument', 'undefined-variable' }
+        -- dup codes already covered by the lsp
+        local excluded_codes = {
+          'no-value-for-parameter',
+          'unused-argument',
+          'undefined-variable',
+          'import-error',
+          'unused-import',
+          'unused-variable'
+        }
         return not contains(excluded_codes, diagnostic.code)
       end,
     }),

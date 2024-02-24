@@ -222,6 +222,7 @@ require('lazy').setup({
   { 'numToStr/Comment.nvim', opts = {} },
 
   -- Fuzzy Finder (files, lsp, etc)
+  -- Prereq: Install https://github.com/BurntSushi/ripgrep
   {
     'nvim-telescope/telescope.nvim',
     branch = '0.1.x',
@@ -548,6 +549,12 @@ local on_attach = function(_, bufnr)
     print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
   end, '[W]orkspace [L]ist Folders')
 
+  nmap('<leader>f', function()
+    vim.lsp.buf.format {
+      filter = function(client) return client.name ~= "html" end
+    }
+  end, '[F]ormat current buffer')
+
   -- Create a command `:Format` local to the LSP buffer
   vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
     vim.lsp.buf.format()
@@ -590,13 +597,14 @@ local servers = {
   -- gopls = {},
   -- rust_analyzer = {},
   tsserver = {},
-  html = { filetypes = { 'html', 'heex' } },
+  html = { filetypes = { 'html', 'heex', 'elixir' } },
   pyright = {},
   elixirls = {},
   tailwindcss = {
     init_options = {
       userLanguages = {
         heex = "phoenix-heex",
+        elixir = "phoenix-heex"
       }
     }
   },

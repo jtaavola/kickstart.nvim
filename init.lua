@@ -187,11 +187,18 @@ require('lazy').setup({
   },
 
   {
-    -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
-    priority = 1000,
+    "rose-pine/neovim",
+    name = "rose-pine",
     config = function()
-      vim.cmd.colorscheme 'onedark'
+      require('rose-pine').setup({
+        highlight_groups = {
+          Directory = { fg = "rose" },
+        },
+        styles = {
+          italic = false,
+        },
+      })
+      vim.cmd.colorscheme 'rose-pine-moon'
     end,
   },
 
@@ -202,7 +209,7 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'rose-pine',
         component_separators = '|',
         section_separators = '',
       },
